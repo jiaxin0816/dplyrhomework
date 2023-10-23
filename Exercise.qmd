@@ -1,0 +1,150 @@
+---
+title: "Exercise"
+subtitle: "Dplyr"
+author: "Group16--Jiaxin Shen and Yutong Wu"
+format:
+  html: default
+execute: 
+  keep-md: true
+---
+
+My github repository link is <https://github.com/jiaxin0816/dplyrhomework>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message=FALSE)
+```
+
+```{r}
+here::i_am("dplyrhomework.Rproj")
+library(here)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(tidyr)
+spotify <- readRDS(file="top-spotify-songs-from-20102019-by-year.Rds")
+dropout <- readRDS(file="dropout.Rds")
+```
+
+## exercise 1
+
+### Question 1
+
+```{r}
+song <- spotify |>
+  distinct(title)
+artist <- spotify |>
+  distinct(artist)
+genre <- spotify |>
+  distinct(`top genre`)
+```
+
+The data set contains `r nrow(song)` songs, `r nrow(artist)` artists and `r nrow(genre)` genres.
+
+### Question 2
+
+```{r}
+data2<- spotify |>
+  group_by(year) |>
+  summarise(number=n())
+knitr::kable(data2)
+```
+
+### Question3
+
+```{r}
+data3 <- spotify|>
+  group_by(artist) |>
+  summarise(n=n_distinct(title)) |>
+  slice_max(n)
+```
+
+The most popular artist is `r data3[1,1]`, with `r data3[1,2]` songs.
+
+### Question4
+
+```{r}
+data4 <- spotify |>
+  distinct(title, .keep_all = TRUE) |>
+  group_by(`top genre`) |>
+  summarise(min_bpm=min(bpm),
+            max_bpm=max(bpm),
+            mean_bpm=mean(bpm),
+            median_bpm=median(bpm),
+              num=n())
+knitr::kable(data4)
+```
+
+### Question5
+
+```{r}
+data5 <- spotify |> 
+  group_by(year) |>
+  summarise(median_nrgy=median(nrgy),
+            median_dnce=median(dnce))
+data5
+```
+
+### Question6
+
+```{r}
+long_data5 <-
+  data5 |>
+  pivot_longer(!year, names_to = "name", values_to = "Value")
+```
+
+```{r data5}
+ggplot(long_data5, aes(
+  x = year, y = Value,
+    color = name
+)) +
+  geom_line()+
+    scale_x_continuous(breaks = 2010:2019)
+```
+
+## Exercise2
+
+### Question1
+
+```{r}
+df1 <- dropout |> 
+    group_by(`Marital status`,Gender,) |>
+    summarize(median_age = median(`Age at enrollment`),.groups = "drop_last")
+df1
+```
+
+### Question2
+
+```{r}
+df2 <- dropout |> 
+  group_by(`Marital status`,Gender) |>
+  summarize(median_age = median(`Age at enrollment`),.groups = "drop_last")|>
+  select(`Marital status`, Gender, median_age) |>
+  pivot_wider(values_from = median_age, names_from = Gender)
+knitr::kable(df2,digits = 2)
+```
+
+### Question3
+
+```{r}
+ df3 <- dropout |>
+  select(matches("Curricular units"),Target) |>
+  group_by(Target) |>
+  summarise(across(where(is.numeric), mean))
+df3
+```
+
+### Question4
+
+```{r}
+long_df3 <-
+  df3 |>
+  pivot_longer(!Target, names_to = "Units", values_to = "Value")
+```
+
+```{r}
+wide_df3 <- 
+  long_df3 |> 
+  select(Target, Units, Value) |>
+  pivot_wider(values_from = Value , names_from = Target)
+knitr::kable(head(wide_df3,3),digits = 2 )
+```
